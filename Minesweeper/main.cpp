@@ -1,17 +1,23 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+#include <string.h>
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 
 using namespace std;
 
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+const int SCREEN_WIDTH = 1600;
+const int SCREEN_HEIGHT = 900;
 const string WINDOW_TITLE = "Minesweeper 1.0";
 
-void logSDLError(ostream& os, const string &msg, bool fatal)
+void logSDLError(ostream& os, const string &msg, bool fatal)    //in case we f*ck up
 {
-    os << msg << "WE FCKED UP: " << SDL_GetError() << endl;
+    os << msg << "WE F*CKED UP: " << SDL_GetError() << endl;
     if(fatal)
     {
         SDL_Quit();
@@ -19,7 +25,7 @@ void logSDLError(ostream& os, const string &msg, bool fatal)
     }
 }
 
-void initSDL(SDL_Window* &window, SDL_Renderer* &renderer)
+void initSDL(SDL_Window* &window, SDL_Renderer* &renderer)      //initialize SDL
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
         logSDLError(cout, "SDL_Init", true);
@@ -28,14 +34,14 @@ void initSDL(SDL_Window* &window, SDL_Renderer* &renderer)
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 }
 
-void quitSDL(SDL_Window* window, SDL_Renderer* renderer)
+void quitSDL(SDL_Window* window, SDL_Renderer* renderer)        //quit SDL
 {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
 
-void waitUntilKeyPress()
+void waitUntilKeyPress()        //wait for a key press
 {
     SDL_Event e;
     while (true)
@@ -50,14 +56,14 @@ void initialize_board();
 void coordinate_blocks(int i, int j);
 void initialize_mine_positions();
 void reveal_blocks(int i, int j);
-void open_block();
-void place_or_remove_flag();
+void open_block(int i, int j);
+void place_or_remove_flag(int i, int j);
 bool end_game_win_check();
 void game();
 
-const int boardWidth = 9;
-const int boardHeight = 9;
-const int mineNumber = 10;
+const int boardWidth = 30;
+const int boardHeight = 24;
+const int mineNumber = 150;
 char userInput;
 char board[boardHeight][boardWidth];
 char boardMinePositions[boardHeight][boardWidth];
@@ -68,22 +74,11 @@ time_t timeElapsed = time(0);
 time_t gameTime;
 
 SDL_Renderer* renderer;
-const int blockSize = 60;
+const int blockSize = 32;
 
-void draw_backgroud()
+void draw_backgroud()       //draw the background
 {
-    //SDL_Renderer* renderer;
-
     SDL_Rect background;
-
-    /*
-    background.x = 0;
-    background.y = 0;
-    background.w = SCREEN_WIDTH;
-    background.h = SCREEN_HEIGHT;
-    SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
-    SDL_RenderFillRect(renderer, &background);
-    */
 
     SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
     SDL_RenderClear(renderer);
@@ -109,33 +104,79 @@ void draw_backgroud()
     }
 }
 
-void draw_board(char block_property, int i, int j)
+void draw_board(char blockProperty, int i, int j)       //draw the board
 {
-    //SDL_Renderer* renderer;
-
     SDL_Rect block;
 
-    switch(block_property)
+    block.x = SCREEN_WIDTH/2 - (blockSize*boardWidth)/2 + blockSize*j + 1;
+    block.y = SCREEN_HEIGHT/2 - (blockSize*boardHeight)/2 + blockSize*i + 1;
+    block.w = blockSize - 2;
+    block.h = blockSize - 2;
+
+    switch(blockProperty)   //missing number textures
     {
         case '*':
-            block.x = SCREEN_WIDTH/2 - (blockSize*boardWidth)/2 + blockSize*j + 1;
-            block.y = SCREEN_HEIGHT/2 - (blockSize*boardHeight)/2 + blockSize*i + 1;
-            block.w = blockSize - 2;
-            block.h = blockSize - 2;
-            SDL_SetRenderDrawColor(renderer, 64, 128, 255, 255);
+            SDL_SetRenderDrawColor(renderer, 0, 128, 255, 255);
             SDL_RenderFillRect(renderer, &block);
             break;
 
         case 'X':
-            block.x = SCREEN_WIDTH/2 - (blockSize*boardWidth)/2 + blockSize*j + 1;
-            block.y = SCREEN_HEIGHT/2 - (blockSize*boardHeight)/2 + blockSize*i + 1;
-            block.w = blockSize - 2;
-            block.h = blockSize - 2;
-            SDL_SetRenderDrawColor(renderer, 128, 32, 32, 255);
+            SDL_SetRenderDrawColor(renderer, 128, 0, 0, 255);
             SDL_RenderFillRect(renderer, &block);
             break;
 
-        //needs addition
+        case '0':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '1':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '2':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '3':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '4':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '5':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '6':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '7':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case '8':
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        case 'F':
+            SDL_SetRenderDrawColor(renderer, 128, 128, 0, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
+        //needs refactoring
+        //a lot
     }
 
 
@@ -144,11 +185,7 @@ void draw_board(char block_property, int i, int j)
 int main(int argc, char* argv[])
 {
     SDL_Window* window;
-    //SDL_Renderer* renderer;
     initSDL(window, renderer);
-
-    //SDL_RenderClear(renderer);
-
 
     initialize_board();
     initialize_mine_positions();
@@ -164,59 +201,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    /*
-    SDL_Rect block;
 
-    block.x = 0;
-    block.y = 0;
-    block.w = 800;
-    block.h = 600;
-    SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
-    SDL_RenderFillRect(renderer, &block);
-
-    block.x = SCREEN_WIDTH/2 - (60*boardWidth)/2;
-    block.y = SCREEN_HEIGHT/2 - (60*boardHeight)/2;
-    block.w = 60*boardWidth;
-    block.h = 60*boardHeight;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, &block);
-
-    for(int i = 0; i < boardHeight; i++)
-    {
-        for(int j = 0; j < boardWidth; j++)
-        {
-            block.x = SCREEN_WIDTH/2 - (60*boardWidth)/2 + 60*j;
-            block.y = SCREEN_HEIGHT/2 - (60*boardHeight)/2 + 60*i;
-            block.w = 60;
-            block.h = 60;
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            SDL_RenderDrawRect(renderer, &block);
-
-            switch(board[i][j])
-            {
-                case '*':
-                    block.x = SCREEN_WIDTH/2 - (60*boardWidth)/2 + 60*j + 1;
-                    block.y = SCREEN_HEIGHT/2 - (60*boardHeight)/2 + 60*i + 1;
-                    block.w = 58;
-                    block.h = 58;
-                    SDL_SetRenderDrawColor(renderer, 64, 128, 255, 255);
-                    SDL_RenderFillRect(renderer, &block);
-                    break;
-
-                case 'X':
-                    block.x = SCREEN_WIDTH/2 - (60*boardWidth)/2 + 60*j + 1;
-                    block.y = SCREEN_HEIGHT/2 - (60*boardHeight)/2 + 60*i + 1;
-                    block.w = 58;
-                    block.h = 58;
-                    SDL_SetRenderDrawColor(renderer, 128, 32, 32, 255);
-                    SDL_RenderFillRect(renderer, &block);
-                    break;
-
-                //still to come
-            }
-        }
-    }
-    */
     //end my drawings
 
     SDL_RenderPresent(renderer);
@@ -228,20 +213,20 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-void initialize_board()
+void initialize_board()     //create the board with the given size
 {
     for(int i = 0; i < boardHeight; i++)
         for(int j = 0; j < boardWidth; j++)
             board[i][j] = '*';
 }
 
-void coordinate_blocks(int i, int j)
+void calculate_mines(int i, int j)      //calculate how many mines touching the block
 {
     if(i >= 0 && i < boardHeight && j >= 0 && j < boardWidth && boardMinePositions[i][j] != 'X')
     boardMinePositions[i][j]++;
 }
 
-void initialize_mine_positions()
+void initialize_mine_positions()        //create mines with the given number at randomized positions
 {
     int counter = 0;
     srand(time(0));
@@ -252,26 +237,26 @@ void initialize_mine_positions()
 
     while(counter < mineNumber)
     {
-        int i = rand() % mineNumber;
-        int j = rand() % mineNumber;
-        if(boardMinePositions[i][j] == '0')
+        int i = rand() % boardHeight;
+        int j = rand() % boardWidth;
+        if(boardMinePositions[i][j] != 'X')
         {
             boardMinePositions[i][j] = 'X';
 
-            coordinate_blocks(i - 1, j - 1);
-            coordinate_blocks(i - 1, j);
-            coordinate_blocks(i - 1, j + 1);
-            coordinate_blocks(i, j - 1);
-            coordinate_blocks(i, j + 1);
-            coordinate_blocks(i + 1, j - 1);
-            coordinate_blocks(i + 1, j);
-            coordinate_blocks(i + 1, j + 1);
+            calculate_mines(i - 1, j - 1);
+            calculate_mines(i - 1, j);
+            calculate_mines(i - 1, j + 1);
+            calculate_mines(i, j - 1);
+            calculate_mines(i, j + 1);
+            calculate_mines(i + 1, j - 1);
+            calculate_mines(i + 1, j);
+            calculate_mines(i + 1, j + 1);
             counter++;
         }
     }
 }
 
-void reveal_blocks(int i, int j)
+void reveal_blocks(int i, int j)        //reveal block and adjacent blocks when opened
 {
     if(board[i][j] == '*' && boardMinePositions[i][j] != 'X' && i >= 0 && i < boardHeight && j >= 0 && j < boardWidth)
     {
@@ -291,14 +276,8 @@ void reveal_blocks(int i, int j)
     }
 }
 
-void open_block()
+void open_block(int i, int j)       //open the block and check whether it is a mine
 {
-    int i, j;
-
-    do
-        cin >> i >> j;
-    while(i < 0 || i > boardHeight - 1 || j < 0 || j > boardWidth - 1);
-
     if(boardMinePositions[i][j] == 'X')
     {
         board[i][j] = 'X';
@@ -313,13 +292,8 @@ void open_block()
         reveal_blocks(i, j);
 }
 
-void place_or_remove_flag()
+void place_or_remove_flag(int i, int j)     //place or remove a flag on the block
 {
-    int i, j;
-    do
-        cin >> i >> j;
-    while(i < 0 || i > boardHeight - 1 || j < 0 || j > boardWidth - 1);
-
     if (board[i][j] == '*')
     {
         board[i][j] = 'F';
@@ -338,18 +312,24 @@ void place_or_remove_flag()
     }
 }
 
-void get_user_input()   //needs refactoring
+void get_user_input(int mouseX, int mouseY, bool leftMouseClicked)   //respond to mouse events
 {
-    cin >> userInput;
-    switch (userInput)
+    int i, j;
+
+    if(mouseX >= (SCREEN_WIDTH - blockSize*boardWidth) / 2 &&
+       mouseX <= (SCREEN_WIDTH - blockSize*boardWidth) / 2 &&
+       mouseY >= (SCREEN_HEIGHT - blockSize*boardHeight) / 2 &&
+       mouseY <= (SCREEN_HEIGHT - blockSize*boardHeight) / 2)
     {
-        case 'o' : open_block(); break;
-        case 'f' : place_or_remove_flag(); break;
-        default  : get_user_input();
+        j = ((mouseX - (SCREEN_WIDTH - blockSize*boardWidth)) / 2) / blockSize;
+        i = ((mouseY - (SCREEN_HEIGHT - blockSize*boardHeight)) / 2) / blockSize;
     }
+
+    if(leftMouseClicked) open_block(i, j);
+    else place_or_remove_flag(i, j);
 }
 
-bool end_game_win_check()
+bool end_game_win_check()       //check for game end conditions
 {
     if(flagCounter == mineNumber && minesFlaggedCounter == mineNumber)
         return 1;
