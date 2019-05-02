@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <iomanip>
 #include <algorithm>
 #include <math.h>
@@ -10,17 +11,13 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 
-#define boardWidth 30
-#define boardHeight 24
-#define mineNumber 150
-#define blockSize 32        //will vary depending on game difficulty
+#define SCREEN_WIDTH 1600
+#define SCREEN_HEIGHT 900
 #define backgroundTextWidth 20
 #define backgroundTextHeight 40
 
 using namespace std;
 
-const int SCREEN_WIDTH = 1600;
-const int SCREEN_HEIGHT = 900;
 const string WINDOW_TITLE = "Minesweeper 1.0";
 
 void log_SDL_error(ostream& os, const string &msg, bool fatal)    //in case we f*ck up
@@ -54,26 +51,71 @@ void quit_SDL(SDL_Window* window, SDL_Renderer* renderer)        //quit SDL
     SDL_Quit();
 }
 
-void initialize_board();
-void coordinate_blocks(int i, int j);
+int boardWidth;
+int boardHeight;
+int mineNumber;
+int blockSize;
+
+void set_game_difficulty(int gameDifficulty)
+{
+    switch(gameDifficulty)
+    {
+        case 1:
+            {
+                boardWidth = 9;
+                boardHeight = 9;
+                mineNumber = 10;
+                blockSize = 64;
+                break;
+            }
+
+        case 2:
+            {
+                boardWidth = 16;
+                boardHeight = 16;
+                mineNumber = 40;
+                blockSize = 48;
+                break;
+            }
+
+        case 3:
+            {
+                boardWidth = 30;
+                boardHeight = 16;
+                mineNumber = 99;
+                blockSize = 40;
+                break;
+            }
+
+        case 4:
+            {
+                boardWidth = 30;
+                boardHeight = 24;
+                mineNumber = 150;
+                blockSize = 32;
+                break;
+            }
+    }
+}
+
+//void initialize_board();
 void initialize_mine_positions();
+void calculate_mines(int i, int j);
 void reveal_blocks(int i, int j);
 void open_block(int i, int j);
 void place_or_remove_flag(int i, int j);
 void get_user_input(int mouseX, int mouseY, bool leftMouseClicked);
 void get_mouse_coordinates();
 bool end_game_win_check();
-void game();
+void rend_game();
 
-char userInput;
-char board[boardHeight][boardWidth];
-char boardMinePositions[boardHeight][boardWidth];
+vector<vector<char>> board;
+vector<vector<char>> boardMinePositions;
 int flagCounter = 0;
 int minesFlaggedCounter = 0;
 bool endGameLose = false;
-time_t timeElapsed = time(0);
+time_t initTime = time(0);
 time_t gameTime;
-void rend_game();
 
 SDL_Renderer* renderer;
 SDL_Color Color1 = {0, 0, 255};
@@ -198,6 +240,11 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_RenderFillRect(renderer, &block);
             break;
 
+        case 'F':
+            SDL_SetRenderDrawColor(renderer, 128, 128, 0, 255);
+            SDL_RenderFillRect(renderer, &block);
+            break;
+
         case '0':
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderFillRect(renderer, &block);
@@ -216,6 +263,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(oneTexture);
             break;
         }
+
         case '2':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -229,6 +277,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(twoTexture);
             break;
         }
+
         case '3':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -242,6 +291,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(threeTexture);
             break;
         }
+
         case '4':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -255,6 +305,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(fourTexture);
             break;
         }
+
         case '5':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -268,6 +319,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(fiveTexture);
             break;
         }
+
         case '6':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -281,6 +333,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(sixTexture);
             break;
         }
+
         case '7':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -294,6 +347,7 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(sevenTexture);
             break;
         }
+
         case '8':
         {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -307,10 +361,6 @@ void draw_board(char blockProperty, int i, int j)       //draw the board
             SDL_DestroyTexture(eightTexture);
             break;
         }
-        case 'F':
-            SDL_SetRenderDrawColor(renderer, 128, 128, 0, 255);
-            SDL_RenderFillRect(renderer, &block);
-            break;
 
         //needs refactoring
     }
@@ -349,12 +399,12 @@ void draw_time()
         cout << "We f*cked up TTF_OpenFont : \n" << SDL_GetError();
     }
 
-    SDL_Surface* timeBackgroundNumber = TTF_RenderText_Solid(consolasFont, to_string(gameTime - timeElapsed).c_str(), BackgroundTextColor);
+    SDL_Surface* timeBackgroundNumber = TTF_RenderText_Solid(consolasFont, to_string(gameTime - initTime).c_str(), BackgroundTextColor);
     SDL_Texture* timeBackgroundNumberTexture = SDL_CreateTextureFromSurface(renderer, timeBackgroundNumber);
     SDL_Rect copyRectangle;
-    copyRectangle.x = SCREEN_WIDTH - backgroundTextWidth * (int(log10(gameTime - timeElapsed)) + 1);
+    copyRectangle.x = SCREEN_WIDTH - backgroundTextWidth * (int(log10(gameTime - initTime)) + 1);
     copyRectangle.y = 0 + backgroundTextHeight;
-    copyRectangle.w = backgroundTextWidth * strlen(to_string(gameTime - timeElapsed).c_str());
+    copyRectangle.w = backgroundTextWidth * strlen(to_string(gameTime - initTime).c_str());
     copyRectangle.h = backgroundTextHeight;
     SDL_RenderCopy(renderer, timeBackgroundNumberTexture, NULL, &copyRectangle);
 
@@ -366,8 +416,6 @@ void draw_time()
 
 void draw_everything()
 {
-    SDL_RenderClear(renderer);
-
     draw_background();
 
     for(int i = 0; i < boardHeight; i++)
@@ -391,14 +439,19 @@ int main(int argc, char* argv[])
     SDL_Window* window;
     init_SDL(window, renderer);
 
-    initialize_board();
+    set_game_difficulty(1);
+
+    board = vector<vector<char>>(boardHeight, vector<char>(boardWidth, '*'));
+    boardMinePositions = vector<vector<char>>(boardHeight, vector<char>(boardWidth, '0'));
+
     initialize_mine_positions();
 
-    gameTime = time(0);
+    //initialize_board();
+    //initialize_mine_positions();
+
+
 
     //my drawings here
-
-    SDL_RenderPresent(renderer);
 
     rend_game();
 
@@ -409,14 +462,14 @@ int main(int argc, char* argv[])
     quit_SDL(window, renderer);
     return 0;
 }
-
+/*
 void initialize_board()     //create the board with the given size
 {
     for(int i = 0; i < boardHeight; i++)
         for(int j = 0; j < boardWidth; j++)
             board[i][j] = '*';
 }
-
+*/
 void calculate_mines(int i, int j)      //calculate how many mines touching the block
 {
     if(i >= 0 && i < boardHeight && j >= 0 && j < boardWidth && boardMinePositions[i][j] != 'X')
@@ -427,11 +480,11 @@ void initialize_mine_positions()        //create mines with the given number at 
 {
     int counter = 0;
     srand(time(0));
-
+    /*
     for(int i = 0; i < boardHeight; i++)
         for(int j = 0; j < boardWidth; j++)
             boardMinePositions[i][j] = '0';
-
+    */
     while(counter < mineNumber)
     {
         int i = rand() % boardHeight;
@@ -455,22 +508,23 @@ void initialize_mine_positions()        //create mines with the given number at 
 
 void reveal_blocks(int i, int j)        //reveal block and adjacent blocks when opened
 {
-    if(board[i][j] == '*' && boardMinePositions[i][j] != 'X' && i >= 0 && i < boardHeight && j >= 0 && j < boardWidth)
+    if(i >= 0 && i < boardHeight && j >= 0 && j < boardWidth && board[i][j] == '*' && boardMinePositions[i][j] != 'X')
     {
         board[i][j] = boardMinePositions[i][j];
 
         if(boardMinePositions[i][j] == '0')
         {
-            reveal_blocks(i - 1, j - 1);
-            reveal_blocks(i - 1, j);
-            reveal_blocks(i - 1, j + 1);
-            reveal_blocks(i, j - 1);
-            reveal_blocks(i, j + 1);
-            reveal_blocks(i + 1, j - 1);
-            reveal_blocks(i + 1, j);
-            reveal_blocks(i + 1, j + 1);
+            if(i != 0 && j != 0 && board[i - 1][j - 1] == '*') reveal_blocks(i - 1, j - 1);
+            if(i != 0 && board[i - 1][j] == '*') reveal_blocks(i - 1, j);
+            if(i != 0 && j != boardWidth - 1 && board[i - 1][j + 1] == '*') reveal_blocks(i - 1, j + 1);
+            if(j != 0 && board[i][j - 1] == '*') reveal_blocks(i, j - 1);
+            if(j != boardWidth - 1 && board[i][j + 1] == '*') reveal_blocks(i, j + 1);
+            if(i != boardHeight - 1 && j != 0 && board[i + 1][j - 1] == '*') reveal_blocks(i + 1, j - 1);
+            if(i != boardHeight - 1 && board[i + 1][j] == '*') reveal_blocks(i + 1, j);
+            if(i != boardHeight - 1 && j != boardWidth - 1 && board[i + 1][j + 1] == '*') reveal_blocks(i + 1, j + 1);
         }
     }
+    printf("Reveal [%d][%d]\n", i, j);
 }
 
 void open_block(int i, int j)       //open the block and check whether it is a mine
@@ -536,25 +590,25 @@ void get_user_input(int mouseX, int mouseY, bool leftMouseClicked)   //respond t
         {
             int adjacentFlags = 0;
 
-            if(board[i - 1][j - 1] == 'F' && i != 0 && j != 0) adjacentFlags++;
-            if(board[i - 1][j] == 'F' && i != 0) adjacentFlags++;
-            if(board[i - 1][j + 1] == 'F' && i != 0 && j != boardWidth) adjacentFlags++;
-            if(board[i][j - 1] == 'F' && j != 0) adjacentFlags++;
-            if(board[i][j + 1] == 'F' && j != boardWidth) adjacentFlags++;
-            if(board[i + 1][j - 1] == 'F' && i != boardHeight && j != 0) adjacentFlags++;
-            if(board[i + 1][j] == 'F' && i != boardHeight) adjacentFlags++;
-            if(board[i + 1][j + 1] == 'F' && i != boardHeight && j != boardWidth) adjacentFlags++;
+            if(i != 0 && j != 0 && board[i - 1][j - 1] == 'F') adjacentFlags++;
+            if(i != 0 && board[i - 1][j] == 'F') adjacentFlags++;
+            if(i != 0 && j != boardWidth - 1 && board[i - 1][j + 1] == 'F') adjacentFlags++;
+            if(j != 0 && board[i][j - 1] == 'F') adjacentFlags++;
+            if(j != boardWidth - 1 && board[i][j + 1] == 'F') adjacentFlags++;
+            if(i != boardHeight - 1 && j != 0 && board[i + 1][j - 1] == 'F') adjacentFlags++;
+            if(i != boardHeight - 1 && board[i + 1][j] == 'F') adjacentFlags++;
+            if(i != boardHeight - 1 && j != boardWidth - 1 && board[i + 1][j + 1] == 'F') adjacentFlags++;
 
             if(adjacentFlags == board[i][j] - 48)
             {
-                if(board[i - 1][j - 1] == '*' && i != 0 && j != 0) open_block(i - 1, j - 1);
-                if(board[i - 1][j] == '*' && i != 0) open_block(i - 1, j);
-                if(board[i - 1][j + 1] == '*' && i != 0 && j != boardWidth) open_block(i - 1, j + 1);
-                if(board[i][j - 1] == '*' && j != 0) open_block(i, j - 1);
-                if(board[i][j + 1] == '*' && j != boardWidth) open_block(i, j + 1);
-                if(board[i + 1][j - 1] == '*' && i != boardHeight && j != 0) open_block(i + 1, j - 1);
-                if(board[i + 1][j] == '*' && i != boardHeight) open_block(i + 1, j);
-                if(board[i + 1][j + 1] == '*' && i != boardHeight && j != boardWidth) open_block(i + 1, j + 1);
+                if(i != 0 && j != 0 && board[i - 1][j - 1] == '*') open_block(i - 1, j - 1);
+                if(i != 0 && board[i - 1][j] == '*') open_block(i - 1, j);
+                if(i != 0 && j != boardWidth - 1 && board[i - 1][j + 1] == '*') open_block(i - 1, j + 1);
+                if(j != 0 && board[i][j - 1] == '*') open_block(i, j - 1);
+                if(j != boardWidth - 1 && board[i][j + 1] == '*') open_block(i, j + 1);
+                if(i != boardHeight - 1 && j != 0 && board[i + 1][j - 1] == '*') open_block(i + 1, j - 1);
+                if(i != boardHeight - 1 && board[i + 1][j] == '*') open_block(i + 1, j);
+                if(i != boardHeight - 1 && j != boardWidth - 1 && board[i + 1][j + 1] == '*') open_block(i + 1, j + 1);
             }
         }
     }
@@ -575,18 +629,10 @@ bool end_game_win_check()       //check for game end conditions
 void rend_game()
 {
     SDL_Event e;
-    //int mouseX, mouseY;
 
-    draw_background();
-    for(int i = 0; i < boardHeight; i++)
-    {
-        for(int j = 0; j < boardWidth; j++)
-        {
-            draw_board(board[i][j], i, j);
-        }
-    }
+    unsigned int initialTime = 0, currentTime;
 
-    SDL_RenderPresent(renderer);
+    draw_everything();
 
     while(!endGameLose && !end_game_win_check())
     {
@@ -611,17 +657,19 @@ void rend_game()
 
                 draw_everything();
 
-                cout << "Time: " << gameTime - timeElapsed << endl;
+                cout << "Time: " << gameTime - initTime << endl;
                 cout << "Flag: " << mineNumber - flagCounter << endl;
                 printf("(mouseX, mouseY) = (%d, %d)\n", e.button.x, e.button.y);
             }
         }
 
-        draw_everything();
-        //get_mouse_coordinates();
-        //SDL_RenderPresent(renderer);
-        //get_user_input();
-
+        currentTime = SDL_GetTicks();
+        if(currentTime - initialTime >= 1000)
+        {
+            draw_everything();
+            initialTime = currentTime;
+        }
+        //THIS IS WHERE WE'RE FUCKED UP
 
     }
 
@@ -643,7 +691,7 @@ void rend_game()
 
     if(end_game_win_check())
     {
-        cout << "Time to complete: " << gameTime - timeElapsed << endl;
+        cout << "Time to complete: " << gameTime - initTime << endl;
         cout << "YOU WIN!" << endl;
 
         //sleep(1000);
@@ -651,5 +699,3 @@ void rend_game()
         //then clear everything and draw game win message and retry/home/quit button
     }
 }
-
-
