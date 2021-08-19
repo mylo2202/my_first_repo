@@ -1,1 +1,4 @@
 Registration success! Here is your secret code to reset the password: cc20f28d1e574141d50cbebea06fdc2a
+
+Revealing phpinfo().html
+https://beaglesecurity.com/blog/vulnerability/revealing-phpinfo.html
