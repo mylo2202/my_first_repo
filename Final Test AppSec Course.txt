@@ -1,0 +1,20 @@
+Hi all!
+Mình gửi đề thi kiểm tra final khóa đào tạo. Đề bài: Tìm lỗi bảo mật trên hệ thống test được cấp và report các lỗ hổng đó.
+
+Nguyên	https://fileshare8.night-wolf.io/
+
+
+Yêu cầu:
+•	Thời gian thực hiện: Từ 9h thứ 5 đến 9 ngày chủ nhật (3 ngày)
+•	Gửi report hàng ngày, trước 23h. Final report gửi trước 9h ngày chủ nhật.
+•	Làm độc lập, không trao đổi. Cần hỗ trợ thì các bạn ping trên group chat.
+Report lỗi theo Format như sau:
+•	Tên lỗi
+•	Mức độ nguy hiểm
+•	Mô tả, vị trí lỗi
+•	Mô tả cách khai thác, mã tấn công, ảnh minh họa 
+•	Khuyến cáo khắc phục
+Mail report gửi riêng: LamNT51, NamHB nhé.
+
+Best regard ./.
+NamHB.
