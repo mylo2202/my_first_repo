@@ -2,3 +2,54 @@ Registration success! Here is your secret code to reset the password: cc20f28d1e
 
 Revealing phpinfo().html
 https://beaglesecurity.com/blog/vulnerability/revealing-phpinfo.html
+
+    $ dirb https://fileshare8.night-wolf.io/
+
+    -----------------
+    DIRB v2.22    
+    By The Dark Raver
+    -----------------
+
+    START_TIME: Thu Aug 19 16:54:22 2021
+    URL_BASE: https://fileshare8.night-wolf.io/
+    WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
+
+    -----------------
+
+    GENERATED WORDS: 4612                                                          
+
+    ---- Scanning URL: https://fileshare8.night-wolf.io/ ----
+    + https://fileshare8.night-wolf.io/cgi-bin/ (CODE:403|SIZE:210)                                    
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/css/                                               
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/fonts/                                             
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/images/                                            
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/includes/                                          
+    + https://fileshare8.night-wolf.io/index.php (CODE:302|SIZE:3)                                     
+    + https://fileshare8.night-wolf.io/info.php (CODE:200|SIZE:92601)                                  
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/js/                                                
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/locale/                                            
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/pages/                                             
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/uploads/                                           
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/css/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/fonts/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/images/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/includes/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/js/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/locale/ ----
+    ==> DIRECTORY: https://fileshare8.night-wolf.io/locale/ja_JP/                                      
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/pages/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/uploads/ ----
+
+    ---- Entering directory: https://fileshare8.night-wolf.io/locale/ja_JP/ ----
+
+    -----------------
+    END_TIME: Thu Aug 19 17:35:31 2021
+    DOWNLOADED: 46120 - FOUND: 3
